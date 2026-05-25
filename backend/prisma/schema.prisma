@@ -1,0 +1,168 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum VehicleType {
+  BIKE
+  BICYCLE
+  TRUCK
+}
+
+enum OrderVehicleType {
+  BIKE
+  CAR
+}
+
+enum ServiceType {
+  PUNCTURE
+  FUEL
+  BATTERY
+  TOWING
+  SPARK_PLUG
+  CHAIN
+  BRAKE_WIRE
+  COOLANT
+  OIL
+  BULB
+  NOT_STARTING
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  PROVIDER_ON_WAY
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  ONLINE
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+}
+
+enum EarningType {
+  EARNING
+  WITHDRAWAL
+}
+
+enum EarningStatus {
+  PENDING
+  SETTLED
+}
+
+model User {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String
+  phone        String    @unique
+  email        String?
+  profilePhoto String?   @map("profile_photo")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  orders       Order[]
+  ratings      Rating[]
+
+  @@map("users")
+}
+
+model Provider {
+  id              String            @id @default(uuid()) @db.Uuid
+  name            String
+  phone           String            @unique
+  aadharNumber    String?           @map("aadhar_number")
+  aadharPhotoUrl  String?           @map("aadhar_photo_url")
+  profilePhotoUrl String?           @map("profile_photo_url")
+  vehicleType     VehicleType       @map("vehicle_type")
+  skills          String[]          // Array of skills e.g., ["puncture", "fuel"]
+  isVerified      Boolean           @default(false) @map("is_verified")
+  isOnline        Boolean           @default(false) @map("is_online")
+  currentLat      Decimal           @map("current_lat") @db.Decimal(9, 6)
+  currentLng      Decimal           @map("current_lng") @db.Decimal(9, 6)
+  rating          Decimal           @default(5.0) @map("rating") @db.Decimal(2, 1)
+  totalOrders     Int               @default(0) @map("total_orders")
+  walletBalance   Decimal           @default(0.00) @map("wallet_balance") @db.Decimal(10, 2)
+  createdAt       DateTime          @default(now()) @map("created_at")
+  orders          Order[]
+  ratings         Rating[]
+  earnings        ProviderEarning[]
+
+  @@index([isOnline, isVerified])
+  @@map("providers")
+}
+
+model Order {
+  id                 String            @id @default(uuid()) @db.Uuid
+  userId             String            @map("user_id") @db.Uuid
+  providerId         String?           @map("provider_id") @db.Uuid
+  vehicleType        OrderVehicleType  @map("vehicle_type")
+  serviceType        ServiceType       @map("service_type")
+  status             OrderStatus       @default(PENDING)
+  userLat            Decimal           @map("user_lat") @db.Decimal(9, 6)
+  userLng            Decimal           @map("user_lng") @db.Decimal(9, 6)
+  userAddress        String            @map("user_address")
+  distanceKm         Decimal?          @map("distance_km") @db.Decimal(5, 2)
+  basePrice          Decimal           @map("base_price") @db.Decimal(10, 2)
+  distanceCharge     Decimal           @map("distance_charge") @db.Decimal(10, 2)
+  totalPrice         Decimal           @map("total_price") @db.Decimal(10, 2)
+  platformCommission Decimal           @map("platform_commission") @db.Decimal(10, 2)
+  providerEarning    Decimal           @map("provider_earning") @db.Decimal(10, 2)
+  paymentMethod      PaymentMethod     @map("payment_method")
+  paymentStatus      PaymentStatus     @default(PENDING) @map("payment_status")
+  otp                String            @db.VarChar(6)
+  createdAt          DateTime          @default(now()) @map("created_at")
+  acceptedAt         DateTime?         @map("accepted_at")
+  completedAt        DateTime?         @map("completed_at")
+  
+  user               User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider           Provider?         @relation(fields: [providerId], references: [id], onDelete: SetNull)
+  ratings            Rating[]
+  earnings           ProviderEarning[]
+
+  @@index([status])
+  @@index([userId])
+  @@index([providerId])
+  @@map("orders")
+}
+
+model Rating {
+  id         String   @id @default(uuid()) @db.Uuid
+  orderId    String   @map("order_id") @db.Uuid
+  userId     String   @map("user_id") @db.Uuid
+  providerId String   @map("provider_id") @db.Uuid
+  rating     Int      @db.Integer
+  review     String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  order      Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider   Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+  @@map("ratings")
+}
+
+model ProviderEarning {
+  id         String        @id @default(uuid()) @db.Uuid
+  providerId String        @map("provider_id") @db.Uuid
+  orderId    String?       @map("order_id") @db.Uuid
+  amount     Decimal       @db.Decimal(10, 2)
+  type       EarningType   @map("type")
+  status     EarningStatus @default(PENDING) @map("status")
+  createdAt  DateTime      @default(now()) @map("created_at")
+
+  provider   Provider      @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  order      Order?        @relation(fields: [orderId], references: [id], onDelete: SetNull)
+
+  @@index([providerId])
+  @@map("provider_earnings")
+}

@@ -1,0 +1,19 @@
+{
+  "name": "roadassist",
+  "version": "1.0.0",
+  "description": "On-Demand Vehicle Roadside Assistance Platform",
+  "private": true,
+  "scripts": {
+    "infra:up": "docker compose up -d",
+    "infra:down": "docker compose down",
+    "start:backend": "npm run --prefix backend dev",
+    "start:admin": "npm run --prefix admin-dashboard dev",
+    "start:customer": "npm run --prefix customer-app start",
+    "start:provider": "npm run --prefix provider-app start",
+    "db:migrate": "npm run --prefix backend db:migrate",
+    "db:studio": "npm run --prefix backend db:studio"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
