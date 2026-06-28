@@ -14,6 +14,8 @@ import { CameraEngine } from '../camera/CameraEngine';
 import { AnimationLibrary } from '../animations/AnimationLibrary';
 import { renderFrame, drawFPS } from '../renderer/CanvasRenderer';
 import { CANVAS_WIDTH, CANVAS_HEIGHT } from '../layout/layouts';
+import { VoiceEngine } from './VoiceEngine';
+import { soundEngine } from './SoundEngine';
 
 export interface EngineCallbacks {
   onDebugUpdate: (state: DebugState) => void;
@@ -28,6 +30,7 @@ export class Engine {
   private timelineEngine = new TimelineEngine();
   private cameraEngine   = new CameraEngine();
   private animLibrary    = new AnimationLibrary();
+  private voiceEngine    = new VoiceEngine();
 
   // Runtime state
   private compiledScene: CompiledScene | null = null;
@@ -50,6 +53,13 @@ export class Engine {
   // Callbacks
   private callbacks: EngineCallbacks | null = null;
 
+  // Video Export state
+  private mediaRecorder: MediaRecorder | null = null;
+  private recordedChunks: Blob[] = [];
+  private isExporting = false;
+  private onExportProgress: ((progress: number) => void) | null = null;
+  private onExportComplete: ((blobUrl: string) => void) | null = null;
+
   // ------------------------------------------------------------------
   // Public API
   // ------------------------------------------------------------------
@@ -69,6 +79,15 @@ export class Engine {
     this.loadScene(0);
 
     return { storyPlan: this.storyPlan, sceneJSONs: this.sceneJSONs };
+  }
+
+  loadProject(storyPlan: StoryPlan, sceneJSONs: SceneJSON[]): void {
+    this.storyPlan = storyPlan;
+    this.sceneJSONs = sceneJSONs;
+    this.currentSceneIndex = 0;
+    this.currentTime = 0;
+    this.loadScene(0);
+    this.renderOnce();
   }
 
   private loadScene(index: number): void {
@@ -108,6 +127,9 @@ export class Engine {
     this.isPlaying = true;
     this.lastTimestamp = null;
     this.rafId = requestAnimationFrame(this.loop.bind(this));
+    if (!this.isExporting) {
+      soundEngine.playBGM();
+    }
     console.log('[Engine] Playback started.');
   }
 
@@ -117,11 +139,16 @@ export class Engine {
       cancelAnimationFrame(this.rafId);
       this.rafId = null;
     }
+    this.voiceEngine.cancel();
+    soundEngine.stopBGM();
     console.log('[Engine] Playback paused.');
   }
 
   reset(): void {
     this.pause();
+    this.voiceEngine.reset();
+    soundEngine.stopBGM();
+    this.currentSceneIndex = 0;
     this.currentTime = 0;
     this.lastTimestamp = null;
     this.fpsBuffer = [];
@@ -130,7 +157,7 @@ export class Engine {
 
     // Reload scene to reset character positions
     if (this.sceneJSONs.length > 0) {
-      this.loadScene(this.currentSceneIndex);
+      this.loadScene(0);
     }
 
     // Draw the first frame static
@@ -138,12 +165,127 @@ export class Engine {
     console.log('[Engine] Reset complete.');
   }
 
-  seekTo(time: number): void {
-    this.currentTime = Math.max(0, Math.min(time, this.compiledScene?.duration ?? 0));
+  seekTo(absoluteTime: number): void {
+    this.voiceEngine.reset();
+    let accumulated = 0;
+    let targetIndex = 0;
+
+    for (let i = 0; i < this.sceneJSONs.length; i++) {
+      const dur = this.sceneJSONs[i].duration;
+      if (absoluteTime >= accumulated && absoluteTime <= accumulated + dur) {
+        targetIndex = i;
+        break;
+      }
+      accumulated += dur;
+      if (i === this.sceneJSONs.length - 1) {
+        targetIndex = i;
+      }
+    }
+
+    if (this.currentSceneIndex !== targetIndex) {
+      this.currentSceneIndex = targetIndex;
+      this.loadScene(targetIndex);
+    }
+
+    this.currentTime = Math.max(0, absoluteTime - accumulated);
+    this.renderOnce();
   }
 
   isReady(): boolean {
     return this.compiledScene !== null;
+  }
+
+  startExport(
+    ratio: '16:9' | '9:16',
+    onProgress: (progress: number) => void,
+    onComplete: (blobUrl: string) => void
+  ): void {
+    if (this.isExporting || !this.canvas) return;
+
+    this.isExporting = true;
+    this.onExportProgress = onProgress;
+    this.onExportComplete = onComplete;
+
+    // Reset playhead to start
+    this.reset();
+    
+    // Set recording resolution / aspect ratio temporarily on the canvas
+    if (ratio === '9:16') {
+      // 304x540 fits 9:16 vertically and keeps coordinates proportional
+      this.canvas.width = 304;
+      this.canvas.height = 540;
+    } else {
+      this.canvas.width = CANVAS_WIDTH;
+      this.canvas.height = CANVAS_HEIGHT;
+    }
+
+    this.recordedChunks = [];
+    
+    // Capture stream at 30 FPS
+    const stream = this.canvas.captureStream(30);
+    
+    let mimeType = 'video/webm;codecs=vp9';
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'video/webm;codecs=vp8';
+    }
+    if (!MediaRecorder.isTypeSupported(mimeType)) {
+      mimeType = 'video/webm';
+    }
+
+    try {
+      this.mediaRecorder = new MediaRecorder(stream, { mimeType });
+      this.mediaRecorder.ondataavailable = (e) => {
+        if (e.data && e.data.size > 0) {
+          this.recordedChunks.push(e.data);
+        }
+      };
+      
+      this.mediaRecorder.onstop = () => {
+        const blob = new Blob(this.recordedChunks, { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        
+        if (this.canvas) {
+          this.canvas.width = CANVAS_WIDTH;
+          this.canvas.height = CANVAS_HEIGHT;
+        }
+        
+        this.isExporting = false;
+        this.onExportComplete?.(url);
+        
+        this.onExportProgress = null;
+        this.onExportComplete = null;
+        
+        this.reset();
+      };
+
+      this.mediaRecorder.start();
+      this.play();
+    } catch (err) {
+      console.error('[Engine] Failed to initialize MediaRecorder:', err);
+      this.isExporting = false;
+      if (this.canvas) {
+        this.canvas.width = CANVAS_WIDTH;
+        this.canvas.height = CANVAS_HEIGHT;
+      }
+    }
+  }
+
+  cancelExport(): void {
+    if (!this.isExporting) return;
+    
+    if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+      this.mediaRecorder.stop();
+    }
+    
+    this.isExporting = false;
+    this.recordedChunks = [];
+    
+    if (this.canvas) {
+      this.canvas.width = CANVAS_WIDTH;
+      this.canvas.height = CANVAS_HEIGHT;
+    }
+    
+    this.reset();
   }
 
   getSceneJSONs(): SceneJSON[] {
@@ -155,11 +297,19 @@ export class Engine {
   }
 
   getCurrentTime(): number {
-    return this.currentTime;
+    return this.getSceneOffset(this.currentSceneIndex) + this.currentTime;
   }
 
   getDuration(): number {
-    return this.compiledScene?.duration ?? 0;
+    return this.sceneJSONs.reduce((sum, s) => sum + s.duration, 0);
+  }
+
+  private getSceneOffset(index: number): number {
+    let offset = 0;
+    for (let i = 0; i < index; i++) {
+      offset += this.sceneJSONs[i]?.duration ?? 0;
+    }
+    return offset;
   }
 
   // ------------------------------------------------------------------
@@ -181,11 +331,28 @@ export class Engine {
     // Check scene end
     const duration = this.compiledScene?.duration ?? 0;
     if (this.currentTime >= duration) {
-      this.currentTime = duration;
-      this.tick(dt);
-      this.pause();
-      this.callbacks?.onComplete();
-      return;
+      if (this.currentSceneIndex < this.sceneJSONs.length - 1) {
+        this.currentSceneIndex++;
+        this.loadScene(this.currentSceneIndex);
+        this.currentTime = 0;
+        this.voiceEngine.reset();
+      } else {
+        this.currentTime = duration;
+        this.tick(dt);
+        this.pause();
+        
+        if (this.isExporting && this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
+          this.mediaRecorder.stop();
+        }
+        
+        this.callbacks?.onComplete();
+        return;
+      }
+    }
+
+    if (this.isExporting && this.onExportProgress) {
+      const absoluteProgress = (this.getCurrentTime() / this.getDuration()) * 100;
+      this.onExportProgress(Math.min(absoluteProgress, 100));
     }
 
     this.tick(dt);
@@ -201,10 +368,25 @@ export class Engine {
     const activeAnims = this.timelineEngine.getActiveAnimations(t);
     const activeCamera = this.timelineEngine.getActiveCamera(t);
 
+    // Check speech triggers
+    for (const dialogue of this.compiledScene.dialogues) {
+      if (t >= dialogue.start && t <= dialogue.end) {
+        if (this.isPlaying) {
+          const speakId = `${dialogue.characterId}-${dialogue.start}`;
+          this.voiceEngine.speak(dialogue, speakId);
+        }
+      }
+    }
+
     // 2. Update character states
     for (const char of this.compiledScene.characters) {
       const anim = (activeAnims[char.id] ?? 'idle') as AnimationName;
       char.currentAnimation = anim;
+
+      // Check if speaking
+      char.isSpeaking = this.compiledScene.dialogues.some(
+        d => d.characterId === char.id && t >= d.start && t <= d.end
+      );
 
       // If walking, set target position toward chair/table
       let targetPos = char.targetPosition;
@@ -221,6 +403,33 @@ export class Engine {
       if (anim === 'walk' && next.targetPosition) {
         char.targetPosition = next.targetPosition;
       }
+
+      // Procedural Sound Effects trigger
+      if (this.isPlaying && !this.isExporting) {
+        const isWalking = anim === 'walk' || anim === 'limp-walk';
+        if (isWalking && Math.floor(t * 2.5) !== Math.floor((t - dt) * 2.5)) {
+          soundEngine.playSFX('step');
+        }
+
+        if (anim === 'giggle' && Math.floor(t / 1.5) !== Math.floor((t - dt) / 1.5)) {
+          soundEngine.playSFX('giggle');
+        }
+
+        const event = this.compiledScene.timelineEvents.find(
+          e => e.characterId === char.id && e.animation === anim && t >= e.start && t <= e.end
+        );
+        if (event) {
+          const relativeTime = t - event.start;
+          const prevRelative = (t - dt) - event.start;
+
+          if (anim === 'bat' && relativeTime >= 1.2 && prevRelative < 1.2) {
+            soundEngine.playSFX('hit');
+          }
+          if ((anim === 'celebrate' || anim === 'cheer') && relativeTime >= 0 && prevRelative < 0) {
+            soundEngine.playSFX('cheer');
+          }
+        }
+      }
     }
 
     // 3. Update camera
@@ -231,14 +440,18 @@ export class Engine {
     this.cameraEngine.tick(dt);
 
     // 4. Render
+    const transProgress = this.compiledScene.transition ? Math.min(this.currentTime / 1.0, 1.0) : undefined;
     renderFrame(
       this.ctx,
       this.cameraEngine,
       this.compiledScene.layout,
       this.compiledScene.characters,
       t,
-      CANVAS_WIDTH,
-      CANVAS_HEIGHT,
+      this.canvas.width,
+      this.canvas.height,
+      this.compiledScene.dialogues,
+      this.compiledScene.transition,
+      transProgress
     );
 
     // 5. FPS
@@ -250,15 +463,19 @@ export class Engine {
   }
 
   private renderOnce(): void {
-    if (!this.compiledScene || !this.ctx) return;
+    if (!this.compiledScene || !this.ctx || !this.canvas) return;
+    const transProgress = this.compiledScene.transition ? Math.min(this.currentTime / 1.0, 1.0) : undefined;
     renderFrame(
       this.ctx,
       this.cameraEngine,
       this.compiledScene.layout,
       this.compiledScene.characters,
-      0,
-      CANVAS_WIDTH,
-      CANVAS_HEIGHT,
+      this.currentTime,
+      this.canvas.width,
+      this.canvas.height,
+      this.compiledScene.dialogues,
+      this.compiledScene.transition,
+      transProgress
     );
   }
 

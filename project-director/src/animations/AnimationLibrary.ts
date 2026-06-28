@@ -58,7 +58,11 @@ export class AnimationLibrary {
     // Map characters to their chairs
     const chairMap: Record<string, string> = {
       Papa: 'chair-left',
+      PapaCat: 'chair-left',
+      GrandpaCat: 'chair-left',
       Kid:  'chair-right',
+      KidCat:  'chair-right',
+      KidRabbit: 'chair-right',
     };
     const chairId = chairMap[characterId];
     if (!chairId) return undefined;
@@ -66,7 +70,7 @@ export class AnimationLibrary {
     const chair = layoutObjects.find((o) => o.id === chairId);
     if (!chair) return undefined;
 
-    return { x: chair.position.x + 30, y: chair.position.y - 20 };
+    return { x: chair.position.x + 30, y: chair.position.y + 40 };
   }
 
   /**

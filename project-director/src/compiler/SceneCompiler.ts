@@ -65,7 +65,9 @@ export class SceneCompiler {
       characters,
       timelineEvents,
       cameraEvents,
+      dialogues: sceneJSON.dialogues ?? [],
       duration: sceneJSON.duration,
+      transition: sceneJSON.transition,
     };
 
     console.log('[SceneCompiler] Compilation complete.');

@@ -1,5 +1,5 @@
 // =============================================================
-// Project Director — Shared Type System
+// Project Director — Shared Type System  (Phase 2 — Expanded)
 // All engine layers communicate through these contracts.
 // =============================================================
 
@@ -17,6 +17,9 @@ export interface SceneDescription {
   name: string;
   description: string;
   durationHint: number; // seconds
+  transition?: 'fade' | 'iris' | 'cut';
+  characterIds?: string[];
+  dialogues?: DialogueDef[];
 }
 
 // ------------------------------------------------------------------
@@ -24,6 +27,7 @@ export interface SceneDescription {
 // ------------------------------------------------------------------
 
 export type AnimationName =
+  // Core
   | 'idle'
   | 'walk'
   | 'sit'
@@ -32,15 +36,34 @@ export type AnimationName =
   | 'talk'
   | 'cook'
   | 'blink'
-  // Cricket animations
+  // Cricket
   | 'bat'
   | 'bowl'
   | 'field'
   | 'run'
   | 'celebrate'
-  | 'cheer';
+  | 'cheer'
+  // Phase 2 — General
+  | 'jump'
+  | 'dance'
+  | 'sleep'
+  | 'think'
+  | 'point'
+  | 'angry'
+  | 'surprised'
+  // Phase 2 — Rabbit-specific
+  | 'hop'
+  | 'garden'
+  | 'read'
+  // Phase 2 — Cat-specific
+  | 'crawl'
+  | 'doze'
+  | 'limp-walk'
+  | 'giggle';
 
 export type CameraShot = 'Wide' | 'Medium' | 'Close';
+
+export type CharacterSpecies = 'cat' | 'rabbit';
 
 export interface CharacterActionDef {
   animation: AnimationName;
@@ -49,15 +72,24 @@ export interface CharacterActionDef {
 }
 
 export interface CharacterDef {
-  id: string;         // 'Papa' | 'Mama' | 'Kid'
+  id: string;
   actions: CharacterActionDef[];
 }
 
+export interface DialogueDef {
+  characterId: string;
+  text: string;
+  start: number; // seconds
+  end: number;   // seconds
+}
+
 export interface SceneJSON {
-  scene: string;       // layout key e.g. 'Kitchen'
-  duration: number;    // total seconds
-  camera: CameraShot;  // default/opening camera
+  scene: string;
+  duration: number;
+  camera: CameraShot;
   characters: CharacterDef[];
+  dialogues?: DialogueDef[];
+  transition?: 'fade' | 'iris' | 'cut';
 }
 
 // ------------------------------------------------------------------
@@ -68,7 +100,7 @@ export interface CameraEvent {
   shot: CameraShot;
   start: number;
   end: number;
-  focusCharacter?: string; // character id to center on
+  focusCharacter?: string;
 }
 
 // ------------------------------------------------------------------
@@ -81,6 +113,7 @@ export interface Vec2 {
 }
 
 export type LayoutObjectType =
+  // Kitchen
   | 'table'
   | 'chair'
   | 'fridge'
@@ -88,7 +121,38 @@ export type LayoutObjectType =
   | 'cup'
   | 'plate'
   | 'stove'
-  | 'counter';
+  | 'counter'
+  // Garden / Outdoor
+  | 'tree'
+  | 'bush'
+  | 'bench'
+  | 'swing'
+  | 'pond'
+  | 'flower'
+  | 'fence'
+  // Living Room
+  | 'sofa'
+  | 'tv'
+  | 'lamp'
+  | 'carpet'
+  | 'bookshelf'
+  // School
+  | 'desk'
+  | 'blackboard'
+  | 'bookbag'
+  // Birthday
+  | 'cake'
+  | 'balloon'
+  | 'gift'
+  | 'banner'
+  // Bedtime
+  | 'bed'
+  | 'moon'
+  | 'curtain'
+  // Market
+  | 'stall'
+  | 'basket'
+  | 'umbrella';
 
 export interface LayoutObject {
   id: string;
@@ -98,6 +162,7 @@ export interface LayoutObject {
   height: number;
   color?: string;
   zIndex?: number;
+  meta?: Record<string, unknown>; // extra hints for renderer
 }
 
 export interface CharacterSpawnPoint {
@@ -121,8 +186,8 @@ export interface TimelineEvent {
   id: string;
   characterId: string;
   animation: AnimationName;
-  start: number;  // seconds
-  end: number;    // seconds
+  start: number;
+  end: number;
 }
 
 export interface CameraTimelineEvent {
@@ -139,13 +204,15 @@ export interface CameraTimelineEvent {
 
 export interface CharacterState {
   id: string;
+  species: CharacterSpecies;   // NEW — determines which draw function to use
   position: Vec2;
   targetPosition?: Vec2;
   currentAnimation: AnimationName;
-  animationProgress: number; // 0-1 within current animation
+  animationProgress: number;
   facingRight: boolean;
   color: CharacterColors;
   scale: number;
+  isSpeaking?: boolean;       // NEW — true if speaking dialogue currently
 }
 
 export interface CharacterColors {
@@ -183,7 +250,9 @@ export interface CompiledScene {
   characters: CharacterState[];
   timelineEvents: TimelineEvent[];
   cameraEvents: CameraTimelineEvent[];
+  dialogues: DialogueDef[];
   duration: number;
+  transition?: 'fade' | 'iris' | 'cut';
 }
 
 // ------------------------------------------------------------------
@@ -202,4 +271,17 @@ export interface DebugState {
     position: Vec2;
   }[];
   isPlaying: boolean;
+}
+
+// ------------------------------------------------------------------
+// Character Registry entry — describes a character for the UI roster
+// ------------------------------------------------------------------
+
+export interface CharacterProfile {
+  id: string;
+  species: CharacterSpecies;
+  displayName: string;
+  family: string;          // 'Cat Family' | 'Rabbit Family'
+  role: string;            // 'Father' | 'Mother' | 'Child' | 'Elder' | 'Baby'
+  signature: AnimationName; // their "hero" animation shown in roster
 }
