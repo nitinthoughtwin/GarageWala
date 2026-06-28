@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nitin Saad - Senior React.js Developer</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        @page {
+            size: A4;
+            margin: 0;
+        }
+
+        body {
+            font-family: 'Inter', 'Calibri', 'Arial', sans-serif;
+            font-size: 10.5px;
+            line-height: 1.5;
+            color: #1a1a1a;
+            background: #f0f0f0;
+        }
+
+        .resume {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 20px auto;
+            background: #ffffff;
+            padding: 32px 36px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        @media print {
+            body {
+                background: #ffffff;
+            }
+            .resume {
+                margin: 0;
+                box-shadow: none;
+                padding: 28px 32px;
+            }
+        }
+
+        /* Header */
+        .header {
+            text-align: center;
+            padding-bottom: 14px;
+            border-bottom: 2px solid #1a56db;
+            margin-bottom: 16px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a1a1a;
+            letter-spacing: 1px;
+            margin-bottom: 4px;
+        }
+
+        .header .subtitle {
+            font-size: 13px;
+            font-weight: 500;
+            color: #1a56db;
+            margin-bottom: 8px;
+        }
+
+        .header .contact {
+            font-size: 10px;
+            color: #555;
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .header .contact span {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+        }
+
+        .header .contact .sep {
+            color: #ccc;
+        }
+
+        /* Section */
+        .section {
+            margin-bottom: 14px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #1a56db;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            border-bottom: 1px solid #e0e0e0;
+            padding-bottom: 4px;
+            margin-bottom: 10px;
+        }
+
+        /* Summary */
+        .summary {
+            font-size: 10.5px;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        /* Experience */
+        .job {
+            margin-bottom: 14px;
+        }
+
+        .job:last-child {
+            margin-bottom: 0;
+        }
+
+        .job-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            margin-bottom: 2px;
+        }
+
+        .job-title {
+            font-size: 11.5px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .job-date {
+            font-size: 10px;
+            color: #666;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .job-company {
+            font-size: 10.5px;
+            color: #555;
+            font-style: italic;
+            margin-bottom: 5px;
+        }
+
+        .job ul {
+            padding-left: 18px;
+        }
+
+        .job ul li {
+            font-size: 10.5px;
+            color: #333;
+            margin-bottom: 3px;
+            line-height: 1.5;
+        }
+
+        /* Projects */
+        .project {
+            margin-bottom: 12px;
+        }
+
+        .project:last-child {
+            margin-bottom: 0;
+        }
+
+        .project-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #1a1a1a;
+        }
+
+        .project-title a {
+            color: #1a56db;
+            text-decoration: none;
+        }
+
+        .project-tech {
+            font-size: 9.5px;
+            color: #666;
+            margin-bottom: 4px;
+            font-style: italic;
+        }
+
+        .project ul {
+            padding-left: 18px;
+        }
+
+        .project ul li {
+            font-size: 10.5px;
+            color: #333;
+            margin-bottom: 2px;
+            line-height: 1.5;
+        }
+
+        /* Skills */
+        .skills-grid {
+            display: grid;
+            grid-template-columns: 120px 1fr;
+            gap: 5px 12px;
+        }
+
+        .skill-category {
+            font-size: 10.5px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .skill-items {
+            font-size: 10.5px;
+            color: #333;
+        }
+
+        /* Education & Certifications */
+        .edu-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+        }
+
+        .edu-degree {
+            font-size: 11px;
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+
+        .edu-year {
+            font-size: 10px;
+            color: #666;
+            font-weight: 500;
+        }
+
+        .edu-college {
+            font-size: 10.5px;
+            color: #555;
+        }
+
+        .cert-item {
+            font-size: 10.5px;
+            color: #333;
+        }
+
+        .languages {
+            font-size: 10.5px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="resume">
+        <!-- Header -->
+        <div class="header">
+            <h1>NITIN SAAD</h1>
+            <div class="subtitle">Senior React.js Developer | Frontend Engineer</div>
+            <div class="contact">
+                <span>📍 Pune, Maharashtra</span>
+                <span class="sep">|</span>
+                <span>📱 8839943091</span>
+                <span class="sep">|</span>
+                <span>✉️ nitin.saad1995@gmail.com</span>
+                <span class="sep">|</span>
+                <span>🔗 linkedin.com/in/nitin-saad</span>
+            </div>
+        </div>
+
+        <!-- Professional Summary -->
+        <div class="section">
+            <div class="section-title">Professional Summary</div>
+            <div class="summary">
+                Senior React.js Developer with 7+ years of experience building scalable, high-performance web applications. 
+                Expert in React.js, TypeScript, Redux Toolkit, and modern frontend architecture. Proven track record of 
+                delivering complex UI solutions with performance optimization, API integration, and AWS cloud services. 
+                AWS Certified Cloud Practitioner with exposure to .NET/C# backend development. Seeking Senior/Lead 
+                Frontend roles in Pune or Remote.
+            </div>
+        </div>
+
+        <!-- Experience -->
+        <div class="section">
+            <div class="section-title">Experience</div>
+
+            <!-- Job 1 -->
+            <div class="job">
+                <div class="job-header">
+                    <div class="job-title">Senior React.js Developer</div>
+                    <div class="job-date">Sept 2022 – Present</div>
+                </div>
+                <div class="job-company">Calsoft Pvt Ltd, Indore</div>
+                <ul>
+                    <li>Led frontend development of enterprise web applications using React.js and TypeScript</li>
+                    <li>Implemented scalable state management using Redux Toolkit across multiple modules</li>
+                    <li>Set up and maintained CI/CD pipelines using Jenkins and Docker for automated deployments</li>
+                    <li>Integrated AWS services (S3, EC2, Lambda, Route 53) for cloud infrastructure management</li>
+                    <li>Optimized application performance using memoization, lazy loading, and code splitting</li>
+                    <li>Collaborated with backend teams to design and consume RESTful APIs</li>
+                    <li>Participated in code reviews and contributed to frontend architecture decisions</li>
+                    <li>Mentored junior developers through code reviews and pair programming sessions</li>
+                </ul>
+            </div>
+
+            <!-- Job 2 -->
+            <div class="job">
+                <div class="job-header">
+                    <div class="job-title">React.js Developer</div>
+                    <div class="job-date">Aug 2021 – Aug 2022</div>
+                </div>
+                <div class="job-company">Thoughtwin IT Solution, Indore</div>
+                <ul>
+                    <li>Developed responsive UI components using React.js and Material UI</li>
+                    <li>Integrated RESTful APIs using Axios for seamless data communication</li>
+                    <li>Implemented state management using Redux and Context API</li>
+                    <li>Worked closely with designers to convert Figma designs into functional components</li>
+                    <li>Collaborated with cross-functional teams to deliver features on schedule</li>
+                </ul>
+            </div>
+
+            <!-- Job 3 -->
+            <div class="job">
+                <div class="job-header">
+                    <div class="job-title">React.js Developer</div>
+                    <div class="job-date">Jul 2019 – Aug 2021</div>
+                </div>
+                <div class="job-company">Acompworld Technosoft, Bhopal</div>
+                <ul>
+                    <li>Built reusable UI components using React.js following best practices</li>
+                    <li>Implemented responsive designs using HTML5, CSS3, and Bootstrap</li>
+                    <li>Worked with backend teams to integrate RESTful APIs</li>
+                    <li>Used Git for version control and collaborative development</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Key Projects -->
+        <div class="section">
+            <div class="section-title">Key Projects</div>
+
+            <div class="project">
+                <div class="project-title">Uniteam — Office Management Web App &nbsp;<a href="https://uniteam.io" target="_blank">uniteam.io</a></div>
+                <div class="project-tech">React JS, Redux, Material UI, TypeScript, Context API, Git</div>
+                <ul>
+                    <li>Developed a web-based office management platform to handle tasks, meetings, and bug tracking</li>
+                    <li>Implemented reusable component library for consistent UI across the application</li>
+                    <li>Managed application state using Redux and Context API</li>
+                    <li>Optimized performance using React.memo, lazy loading, and code splitting</li>
+                </ul>
+            </div>
+
+            <div class="project">
+                <div class="project-title">FSM — Field Service Management System</div>
+                <div class="project-tech">React JS, Redux, Google Maps API, Axios, Jest, Context API</div>
+                <ul>
+                    <li>Built a ticket management system with real-time engineer location tracking</li>
+                    <li>Integrated Google Maps API to visually display and assign tickets based on location</li>
+                    <li>Consumed backend APIs using Axios for data retrieval and updates</li>
+                    <li>Wrote unit tests using Jest to ensure component reliability</li>
+                </ul>
+            </div>
+
+            <div class="project">
+                <div class="project-title">Agrigate — Warehouse Management</div>
+                <div class="project-tech">React JS, Redux, Material UI, Axios, Hooks</div>
+                <ul>
+                    <li>Developed a warehouse booking platform with location-based nearest warehouse search</li>
+                    <li>Handled complete frontend development using React.js and Redux for state management</li>
+                    <li>Integrated backend services using Axios to fetch and post data via RESTful APIs</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Technical Skills -->
+        <div class="section">
+            <div class="section-title">Technical Skills</div>
+            <div class="skills-grid">
+                <div class="skill-category">Frontend</div>
+                <div class="skill-items">React.js, TypeScript, JavaScript (ES6+), Next.js, Redux Toolkit, Context API, HTML5, CSS3, Bootstrap, Material UI, Tailwind CSS</div>
+                
+                <div class="skill-category">Backend</div>
+                <div class="skill-items">C#, ASP.NET Core Web API, Entity Framework Core, JWT Authentication, REST APIs</div>
+                
+                <div class="skill-category">Testing</div>
+                <div class="skill-items">Jest, React Testing Library, React DevTools</div>
+                
+                <div class="skill-category">DevOps & Tools</div>
+                <div class="skill-items">Git, GitHub, GitLab, Bitbucket, Jenkins, Docker, CI/CD, VS Code, Postman, Jira</div>
+                
+                <div class="skill-category">Cloud (AWS)</div>
+                <div class="skill-items">S3, EC2, Lambda, Route 53 — AWS Certified Cloud Practitioner</div>
+                
+                <div class="skill-category">Database</div>
+                <div class="skill-items">SQL Server, PostgreSQL</div>
+            </div>
+        </div>
+
+        <!-- Education -->
+        <div class="section">
+            <div class="section-title">Education</div>
+            <div class="edu-row">
+                <div class="edu-degree">Master of Computer Applications (MCA)</div>
+                <div class="edu-year">2017 – 2020</div>
+            </div>
+            <div class="edu-college">Sam College of Engineering and Technology, Bhopal</div>
+        </div>
+
+        <!-- Certifications -->
+        <div class="section">
+            <div class="section-title">Certifications</div>
+            <div class="cert-item">☁️ AWS Certified Cloud Practitioner — Amazon Web Services</div>
+        </div>
+
+        <!-- Languages -->
+        <div class="section">
+            <div class="section-title">Languages</div>
+            <div class="languages">Hindi (Native) | English (Professional)</div>
+        </div>
+    </div>
+</body>
+</html>
